@@ -3,9 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { OrderModule } from './order/order.module';
-import { DispatchGateway } from './dispatch/dispatch.gateway';
-import { DispatchController } from './dispatch/dispatch.controller';
-import { DispatchService } from './dispatch/dispatch.service';
+
 import { DriversModule } from './drivers/drivers.module';
 import { DispatchModule } from './dispatch/dispatch.module';
 import { JobsModule } from './jobs/jobs.module';
@@ -18,7 +16,7 @@ import { JobsModule } from './jobs/jobs.module';
     DispatchModule, 
     JobsModule
   ],
-  controllers: [AppController, DispatchController],
-  providers: [AppService, DispatchGateway, DispatchService],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

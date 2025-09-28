@@ -1,0 +1,38 @@
+version: '3.8'
+
+# Development overrides for local development
+# This file is automatically used by docker-compose for local dev
+services:
+  pilotx-api:
+    build:
+      context: .
+      target: development
+    volumes:
+      # Mount source code for hot reload in development
+      - .:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      # Enable debug logging
+      DEBUG: pilotx:*
+    # Override command for development with hot reload
+    command: npm run start:dev
+
+  # Development database with no persistence (for testing)
+  mongo:
+    # Add development-specific configuration if needed
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: dev
+      MONGO_INITDB_ROOT_PASSWORD: devpass123
+      MONGO_INITDB_DATABASE: piloX
+
+  # Development Redis with debug logging
+  redis:
+    command: redis-server --appendonly yes --loglevel verbose
+
+  # Development RabbitMQ with easier credentials
+  rabbitmq:
+    environment:
+      RABBITMQ_DEFAULT_USER: dev
+      RABBITMQ_DEFAULT_PASS: devpass123
+      RABBITMQ_DEFAULT_VHOST: pilotx-dev

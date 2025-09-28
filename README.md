@@ -36,6 +36,24 @@ It demonstrates API integrations, order imports, dispatch matching, and driver A
 - **RabbitMQ** (asynchronous order import pipeline)
 - **Socket.IO** (real-time driver dispatch & updates)
 - **Docker Compose** (local dev for MongoDB + RabbitMQ + Redis)
+- **Swagger/OpenAPI** (Interactive API documentation)
+
+---
+
+## 📚 API Documentation
+
+The API is fully documented with **Swagger/OpenAPI 3.0**. Once the application is running, you can access the interactive API documentation at:
+
+**🔗 [http://localhost:3000/api/docs](http://localhost:3000/api/docs)**
+
+The Swagger UI provides:
+- Complete API endpoint documentation
+- Request/response schemas with examples
+- Interactive "Try it out" functionality
+- Authentication support
+- Organized by tags (orders, dispatch, drivers)
+
+All DTOs and controllers are decorated with Swagger annotations for comprehensive documentation.
 
 ---
 
@@ -54,3 +72,7 @@ docker-compose up -d mongo rabbitmq redis
 
 # Start NestJS
 npm run start:dev
+
+# 🎉 Access the application:
+# API: http://localhost:3000
+# Swagger Docs: http://localhost:3000/api/docs

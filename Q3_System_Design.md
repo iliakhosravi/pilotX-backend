@@ -23,15 +23,15 @@
 ```mermaid
 flowchart LR
   subgraph External
-    Store1[Shopify] ---|Webhook/API| APIGW
-    StoreN[Other Stores] ---|Webhook/API| APIGW
-    Admin[Ops Console (Web)] ---|HTTPS| APIGW
-    DriverApps[Driver Mobile Apps] ---|WS/HTTPS| RealtimeGW
+    Store1[Shopify]
+    StoreN[Other Stores]
+    Admin[Ops Console Web]
+    DriverApps[Driver Mobile Apps]
   end
 
   subgraph Edge
     APIGW[API Gateway + WAF + Rate Limit]
-    RealtimeGW[Realtime Gateway (WebSocket/MQTT)]
+    RealtimeGW[Realtime Gateway WebSocket/MQTT]
   end
 
   subgraph Core[Core Services (Kubernetes)]
@@ -55,6 +55,11 @@ flowchart LR
     TS[(ClickHouse/Timescale – optional)]
   end
 
+  Store1 ---|Webhook/API| APIGW
+  StoreN ---|Webhook/API| APIGW
+  Admin ---|HTTPS| APIGW
+  DriverApps ---|WS/HTTPS| RealtimeGW
+  
   APIGW --> Auth
   APIGW --> WebhookIngest
   APIGW --> OrderSvc

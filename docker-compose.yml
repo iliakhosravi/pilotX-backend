@@ -1,33 +1,96 @@
 version: '3.8'
+
 services:
+  # MongoDB Database
   mongo:
     image: mongo:6
     restart: unless-stopped
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: piloX
     volumes:
       - mongo_data:/data/db
+    networks:
+      - pilotx-network
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+  # Redis Cache & Session Store
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
     ports:
-      - "5672:5672"
-      - "15672:15672" # management UI
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pilotx-network
+    command: redis-server --appendonly yes
 
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: pilotx
+    ports:
+      - "5672:5672"      # AMQP port
+      - "15672:15672"    # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - pilotx-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      timeout: 30s
+      interval: 10s
+      retries: 5
+
+  # Pilot X Backend API
   pilotx-api:
     build: .
+    restart: unless-stopped
     depends_on:
       - mongo
+      - redis
       - rabbitmq
     environment:
-      MONGO_URI: mongodb://mongo:27017/pilotx
-      RABBITMQ_URL: amqp://rabbitmq:5672
+      # Database
+      MONGO_URI: mongodb://mongo:27017/piloX
+      
+      # Cache & Session
+      REDIS_URL: redis://redis:6379
+      
+      # Message Queue
+      RABBITMQ_URL: amqp://admin:admin123@rabbitmq:5672/pilotx
       ORDERS_QUEUE: orders_import_queue
+      
+      # Application
+      NODE_ENV: development
+      PORT: 3000
+      
+      # API Configuration
+      API_RATE_LIMIT: 1000
+      MAX_BATCH_SIZE: 500
+      MAX_BATCH_TIME_MS: 2000
     ports:
-      - "3000:3000"
+      - "3000:3000"      # Main API
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - pilotx-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      timeout: 10s
+      interval: 30s
+      retries: 3
+
+networks:
+  pilotx-network:
+    driver: bridge
 
 volumes:
   mongo_data:
+  redis_data:
+  rabbitmq_data:
