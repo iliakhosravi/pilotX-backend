@@ -7,6 +7,7 @@ import { OrderModule } from './order/order.module';
 import { DriversModule } from './drivers/drivers.module';
 import { DispatchModule } from './dispatch/dispatch.module';
 import { JobsModule } from './jobs/jobs.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { JobsModule } from './jobs/jobs.module';
     OrderModule, 
     DriversModule, 
     DispatchModule, 
-    JobsModule
+    JobsModule, AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],

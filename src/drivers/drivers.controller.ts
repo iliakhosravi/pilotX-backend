@@ -1,6 +1,8 @@
-import { Body, Controller, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Req, UseGuards } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiProperty } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiProperty, ApiBearerAuth } from '@nestjs/swagger';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt.guard';
 import Redis from 'ioredis';
 import { IsNumber, IsBoolean } from 'class-validator';
 
@@ -18,16 +20,17 @@ class UpdateAvailabilityDto {
 }
 
 @ApiTags('drivers')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('drivers')
 export class DriversController {
   constructor(@Inject('REDIS') private readonly redis: Redis) {}
 
-  @Patch(':id/location')
+  @Patch('location')
   @ApiOperation({ 
     summary: 'Update driver location',
-    description: 'Updates the geographical location of a driver for dispatch matching'
+    description: 'Updates the geographical location of the authenticated driver for dispatch matching'
   })
-  @ApiParam({ name: 'id', description: 'Driver ID' })
   @ApiBody({ type: UpdateLocationDto })
   @ApiResponse({ 
     status: 200, 
@@ -39,7 +42,12 @@ export class DriversController {
       }
     }
   })
-  async updateLocation(@Param('id') driverId: string, @Body() body: UpdateLocationDto) {
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  async updateLocation(
+    @Req() req: Request & { user: { driverId: string } },
+    @Body() body: UpdateLocationDto
+  ) {
+    const driverId = req.user.driverId;
     // Use Redis GEOADD to store driver location (key: drivers:locations)
     await this.redis.geoadd('drivers:locations', body.lng, body.lat, driverId);
     // Also set a TTL'd key marking last-seen timestamp (optional)
@@ -48,12 +56,11 @@ export class DriversController {
     return { ok: true };
   }
 
-  @Patch(':id/availability')
+  @Patch('availability')
   @ApiOperation({ 
     summary: 'Update driver availability',
-    description: 'Sets whether a driver is available to accept new orders'
+    description: 'Sets whether the authenticated driver is available to accept new orders'
   })
-  @ApiParam({ name: 'id', description: 'Driver ID' })
   @ApiBody({ type: UpdateAvailabilityDto })
   @ApiResponse({ 
     status: 200, 
@@ -65,7 +72,12 @@ export class DriversController {
       }
     }
   })
-  async updateAvailability(@Param('id') driverId: string, @Body() body: UpdateAvailabilityDto) {
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  async updateAvailability(
+    @Req() req: Request & { user: { driverId: string } },
+    @Body() body: UpdateAvailabilityDto
+  ) {
+    const driverId = req.user.driverId;
     // available: set "driver:{id}:available" to '1' or '0'
     if (body.available) {
       await this.redis.set(`driver:${driverId}:available`, '1');
@@ -79,6 +91,6 @@ export class DriversController {
 }
 
 
-// Driver apps should call /drivers/:id/location frequently (throttled), update availability when they go on/off shift or accept a job.
-
+// Driver apps should call /drivers/location frequently (throttled), update availability when they go on/off shift or accept a job.
+// Authentication required - driver ID comes from JWT token for security.
 // We use Redis GEO (drivers:locations) for fast radius queries.
