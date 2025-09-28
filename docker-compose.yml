@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672" # management UI
+
+  pilotx-api:
+    build: .
+    depends_on:
+      - mongo
+      - rabbitmq
+    environment:
+      MONGO_URI: mongodb://mongo:27017/pilotx
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      ORDERS_QUEUE: orders_import_queue
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongo_data:
